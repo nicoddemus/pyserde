@@ -1,7 +1,7 @@
 """
 Serialize and Deserialize in JSON format.
 """
-from typing import Any, Union
+from typing import Any, Optional, Union
 
 from typing_extensions import Type
 
@@ -51,7 +51,7 @@ class JsonDeserializer(Deserializer):
         return json_loads(s, **opts)
 
 
-def to_json(obj: Any, se: Type[Serializer] = JsonSerializer, **opts) -> str:
+def to_json(obj: Any, c: Optional[Type[Any]] = None, se: Type[Serializer] = JsonSerializer, **opts) -> str:
     """
     Serialize the object into JSON str. [orjson](https://github.com/ijl/orjson) will be used if installed.
 
@@ -62,7 +62,7 @@ def to_json(obj: Any, se: Type[Serializer] = JsonSerializer, **opts) -> str:
 
     If you want to use another json package, you can subclass `JsonSerializer` and implement your own logic.
     """
-    return se.serialize(to_dict(obj, reuse_instances=False, convert_sets=True), **opts)
+    return se.serialize(to_dict(obj, c=c, reuse_instances=False, convert_sets=True), **opts)
 
 
 def from_json(c: Type[T], s: Union[str, bytes], de: Type[Deserializer] = JsonDeserializer, **opts) -> T:

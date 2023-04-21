@@ -68,6 +68,47 @@ def init(debug: bool = False) -> None:
 
 
 @dataclass
+class GlobalScope:
+    """
+    Container to store generated code for complext types e.g. Union.
+    """
+
+    classes: Dict[str, Type[Any]] = dataclasses.field(default_factory=dict)
+
+    def get_union(self, cls: Type[Any]) -> Type[Any]:
+        class_name = union_func_name("global", type_args(cls))
+        return self.classes.get(class_name)
+
+    def add_union(self, cls: Type[Any]) -> Type[Any]:
+        from . import serde
+
+        class_name = union_func_name("global", type_args(cls))
+        wrapper_dataclass = dataclasses.make_dataclass(class_name, [("v", cls)])
+        serde(wrapper_dataclass)
+        self.classes[class_name] = wrapper_dataclass
+        return wrapper_dataclass
+
+    def serialize_union(self, cls: Type[Any], obj) -> Any:
+        # print("serialize_union")
+        wrapper_dataclass = self.get_union(cls)
+        serde_scope: Scope = getattr(wrapper_dataclass, SERDE_SCOPE)
+        func_name = union_func_name(UNION_SE_PREFIX, type_args(cls))
+        # print(func_name, obj)
+        return serde_scope.funcs[func_name](obj, False, False)
+
+    def deserialize_union(self, cls: Type[Any], data) -> Any:
+        # print("deserialize_union")
+        wrapper_dataclass = self.get_union(cls)
+        serde_scope: Scope = getattr(wrapper_dataclass, SERDE_SCOPE)
+        func_name = union_func_name(UNION_DE_PREFIX, type_args(cls))
+        # print(func_name, data)
+        return serde_scope.funcs[func_name](cls=cls, data=data)
+
+
+GLOBAL_SCOPE = GlobalScope()
+
+
+@dataclass
 class Scope:
     """
     Container to store types and functions used in code generation context.

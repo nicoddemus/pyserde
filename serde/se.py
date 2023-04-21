@@ -48,6 +48,7 @@ from .compat import (
     typename,
 )
 from .core import (
+    GLOBAL_SCOPE,
     SERDE_SCOPE,
     TO_DICT,
     TO_ITER,
@@ -342,6 +343,7 @@ def is_dataclass_without_se(cls: Type[Any]) -> bool:
 
 
 def to_obj(o, named: bool, reuse_instances: bool, convert_sets: bool, c: Optional[Type[Any]] = None):
+    # print("to_obj", c, o)
     def serializable_to_obj(object):
         serde_scope: Scope = getattr(object, SERDE_SCOPE)
         func_name = TO_DICT if named else TO_ITER
@@ -356,11 +358,17 @@ def to_obj(o, named: bool, reuse_instances: bool, convert_sets: bool, c: Optiona
         )
         if o is None:
             return None
-        if is_dataclass_without_se(o):
+        if is_dataclass_without_se(c or o):
             serialize(type(o))
             return serializable_to_obj(o)
-        if is_serializable(o):
+        if is_serializable(c or o):
             return serializable_to_obj(o)
+        elif is_union(c or o):
+            # print("is_union")
+            wrapper_dataclass = GLOBAL_SCOPE.get_union(c)
+            if not wrapper_dataclass:
+                wrapper_dataclass = GLOBAL_SCOPE.add_union(c)
+            return GLOBAL_SCOPE.serialize_union(c, o)
         elif isinstance(o, list):
             return [thisfunc(e) for e in o]
         elif isinstance(o, tuple):
@@ -417,7 +425,7 @@ def asdict(v: Any) -> Dict[Any, Any]:
     return to_dict(v, reuse_instances=False, convert_sets=False)
 
 
-def to_dict(o, reuse_instances: bool = ..., convert_sets: bool = ...) -> Dict[Any, Any]:
+def to_dict(o, c: Optional[Type[Any]] = None, reuse_instances: bool = ..., convert_sets: bool = ...) -> Dict[Any, Any]:
     """
     Serialize object into dictionary.
 
@@ -437,7 +445,7 @@ def to_dict(o, reuse_instances: bool = ..., convert_sets: bool = ...) -> Dict[An
     >>> to_dict(lst)
     [{'i': 10, 's': 'foo', 'f': 100.0, 'b': True}, {'i': 20, 's': 'foo', 'f': 100.0, 'b': True}]
     """
-    return to_obj(o, named=True, reuse_instances=reuse_instances, convert_sets=convert_sets)
+    return to_obj(o, named=True, c=c, reuse_instances=reuse_instances, convert_sets=convert_sets)
 
 
 @dataclass

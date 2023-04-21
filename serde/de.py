@@ -57,6 +57,7 @@ from .compat import (
 from .core import (
     FROM_DICT,
     FROM_ITER,
+    GLOBAL_SCOPE,
     SERDE_SCOPE,
     TYPE_CHECK,
     UNION_DE_PREFIX,
@@ -404,14 +405,10 @@ def from_obj(c: Type[T], o: Any, named: bool, reuse_instances: bool) -> T:
             else:
                 return thisfunc(type_args(c)[0], o)
         elif is_union(c):
-            v = None
-            for typ in type_args(c):
-                try:
-                    v = thisfunc(typ, o)
-                    break
-                except (SerdeError, ValueError):
-                    pass
-            return v
+            wrapper_dataclass = GLOBAL_SCOPE.get_union(c)
+            if not wrapper_dataclass:
+                wrapper_dataclass = GLOBAL_SCOPE.add_union(c)
+            return GLOBAL_SCOPE.deserialize_union(c, o)
         elif is_list(c):
             if is_bare_list(c):
                 return [e for e in o]
