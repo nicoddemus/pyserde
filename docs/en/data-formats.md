@@ -119,4 +119,4 @@ See [serde.pickle.to_pickle](https://yukinarit.github.io/pyserde/api/serde/pickl
 
 ## Needs a new data format support?
 
-We don't plan to supprot a data format such as XML to keep pyserde as simple as possible. If you need a new data format support, we recommend to create a separate python package. If the data format is interchangable to dict or tuple, implementing the serialize/desrialize API is not that difficult. See [YAML's implementation](https://github.com/yukinarit/pyserde/blob/main/serde/yaml.py) to know how to implement.
+We don't plan to support a data format such as XML to keep pyserde as simple as possible. If you need a new data format support, we recommend to create a separate python package. If the data format is interchangable to dict or tuple, implementing the serialize/desrialize API is not that difficult. See [YAML's implementation](https://github.com/yukinarit/pyserde/blob/main/serde/yaml.py) to know how to implement.
